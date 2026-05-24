@@ -22,10 +22,14 @@ def _enqueue_output(proc, q):
     except:
         pass
 
-# --- CONFIGURATION ---
-UNITY_EXE = Path(r"C:\Users\VIRTUALIAI\Documents\HiddenStates\RustBucket_game\Environment.exe")
-DATA_ROOT = Path(r"C:\Users\VIRTUALIAI\Documents\HiddenStates\DadosTask")
-BRIDGE_SCRIPT = Path(r"C:\Users\VIRTUALIAI\Documents\HiddenStates\bridge.py")
+# --- DYNAMIC CONFIGURATION (Replaced hardcoded C:/ paths) ---
+# This finds the exact folder this dashboard script is sitting inside
+BASE_DIR = Path(__file__).resolve().parent
+
+# Maps to your repository's relative layouts
+UNITY_EXE = BASE_DIR / "RustBucket_game" / "Environment.exe"
+DATA_ROOT = BASE_DIR / "DadosTask"
+BRIDGE_SCRIPT = BASE_DIR / "bridge.py"
 
 st.set_page_config(page_title="Rustbucket Command Center", layout="wide")
 
@@ -35,7 +39,6 @@ if 'bridge_proc' not in st.session_state: st.session_state.bridge_proc = None
 if 'laptop_ip' not in st.session_state: st.session_state.laptop_ip = "192.168.1.173"
 
 # --- MAIN LAYOUT ---
-# Left column for Controls, Right column for Monitors
 left_col, right_col = st.columns([1, 2], gap="large")
 
 # ---------------------------------------------------------
@@ -44,7 +47,7 @@ left_col, right_col = st.columns([1, 2], gap="large")
 with left_col:
     st.header("Controls")
     
-    # 1. Bridge Controls with Status Feedbacklaptop_ip
+    # 1. Bridge Controls with Status Feedback
     c1, c2 = st.columns(2)
     with c1:
         if st.button("Start Bridge", width="stretch"):
@@ -99,19 +102,24 @@ with left_col:
             DATA_ROOT.mkdir(parents=True, exist_ok=True)
             with open(config_file, "w") as f:
                 f.write(f"{participant_name}\n{st.session_state.laptop_ip}")
-            st.session_state.unity_proc = subprocess.Popen([str(UNITY_EXE)])
+            
+            # Checks if the file actually exists right before firing up to avoid bad breaks
+            if UNITY_EXE.exists():
+                st.session_state.unity_proc = subprocess.Popen([str(UNITY_EXE)])
+                st.toast("Unity Executable Fired Up!")
+            else:
+                st.error(f"Could not find Unity executable at: {UNITY_EXE}")
     with u2:
         if st.button("Quit UNITY", width="stretch"):
             if st.session_state.unity_proc:
                 st.session_state.unity_proc.kill()
                 st.session_state.unity_proc = None
+                st.toast("Unity Process Terminated")
 
 # ---------------------------------------------------------
 # RIGHT COLUMN: MONITORS
 # ---------------------------------------------------------
 with right_col:
-    # ... your existing session monitor code ...
-
     st.header("LIVE streaming information")
     error_container = st.container(border=True)
 
